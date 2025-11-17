@@ -9,7 +9,8 @@ export default function Gallery() {
     <div className="starter-page-page">
       <Head>
         <title>Gallery - Arewa19 Pyramid</title>
-        <meta name="description" content="Explore our gallery of events and activities across Northern Nigeria" />
+        <meta name="description" content="Explore our gallery of civic education programs, community events, and movement activities across 19 Northern states" />
+        <meta name="keywords" content="Arewa19 gallery, Northern Nigeria events, civic programs, community activities, movement photos" />
       </Head>
 
       <Header />

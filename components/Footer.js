@@ -13,31 +13,35 @@ const Footer = () => {
             <Link href="/" className="logo d-flex align-items-center">
               <img src="/assets/img/logolight.png" alt="Arewa19 Logo" />
             </Link>
-            <p>A19 is a non-partisan, independent organization dedicated to addressing the pressing concerns of Northern Nigeria. Our mission is to empower the region's youth and women, driving sustainable development and good governance.</p>
+            <p>Arewa19 Pyramid (A19) is a digital-first socio-political movement dedicated to redefining the future of Northern Nigeria through technology, civic education, and narrative transformation.</p>
+            <p className="mt-2"><strong>Rewriting the Arewa Story — Digitally, Politically, and Powerfully.</strong></p>
             <div className="social-links d-flex mt-4">
               <a href="https://twitter.com/arew19"><i className="bi bi-twitter"></i></a>
               <a href="https://www.facebook.com/profile.php?id=100083345650636"><i className="bi bi-facebook"></i></a>
               <a href="https://www.instagram.com/arewa19_official/"><i className="bi bi-instagram"></i></a>
+              <a href="https://youtu.be/HhaPu3llSqg"><i className="bi bi-youtube"></i></a>
             </div>
           </div>
 
           <div className="col-lg-2 col-6 footer-links">
-            <h4>Useful Links</h4>
+            <h4>Explore</h4>
             <ul>
               <li><Link href="/">Home</Link></li>
-              <li><Link href="/#about">About us</Link></li>
-              <li><Link href="/#services">Activities</Link></li>
+              <li><Link href="/#about">About</Link></li>
+              <li><Link href="/programs">Programs</Link></li>
+              <li><Link href="/state-chapters">State Chapters</Link></li>
+              <li><Link href="/media-hub">Media Hub</Link></li>
               <li><Link href="/gallery">Gallery</Link></li>
-              <li><Link href="/community">Community</Link></li>
             </ul>
           </div>
 
           <div className="col-lg-2 col-6 footer-links">
-            <h4>Join Us</h4>
+            <h4>Get Involved</h4>
             <ul>
-              <li><Link href="/community#contact">Membership</Link></li>
-              <li><Link href="/community#contact">Volunteer</Link></li>
-              <li><Link href="/community#contact">Donate</Link></li>
+              <li><Link href="/get-involved">Become a Member</Link></li>
+              <li><Link href="/get-involved">Volunteer</Link></li>
+              <li><Link href="/get-involved">Partner With Us</Link></li>
+              <li><Link href="/get-involved">Join Diaspora</Link></li>
             </ul>
           </div>
 

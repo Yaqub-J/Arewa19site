@@ -85,13 +85,13 @@ const Header = () => {
         <nav id="navmenu" className="navmenu">
           <ul>
             <li><Link href="/" className="active" onClick={closeMobileNav}>Home</Link></li>
-            <li><Link href="/#about" onClick={closeMobileNav}>About</Link></li>
-            <li><Link href="https://blog.arewa19pyramid.com" onClick={closeMobileNav}>Blog</Link></li>
+            <li><Link href="/programs" onClick={closeMobileNav}>Programs</Link></li>
+            <li><Link href="/state-chapters" onClick={closeMobileNav}>State Chapters</Link></li>
+            <li><Link href="/media-hub" onClick={closeMobileNav}>Media Hub</Link></li>
             <li><Link href="/gallery" onClick={closeMobileNav}>Gallery</Link></li>
-            <li><Link href="/community" onClick={closeMobileNav}>Community</Link></li>
             <li className="nav-cta-button">
-              <Link href="/community#contact" onClick={closeMobileNav}>
-                <button className="btn-get-started">Join Us</button>
+              <Link href="/get-involved" onClick={closeMobileNav}>
+                <button className="btn-get-started">Get Involved</button>
               </Link>
             </li>
             <li className="d-flex align-items-center">

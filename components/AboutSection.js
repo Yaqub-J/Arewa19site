@@ -23,35 +23,35 @@ const AboutSection = () => {
           </div>
 
           <div className="col-lg-7 content ps-lg-4" data-aos="fade-up" data-aos-delay="100">
-            <h3>About Us</h3>
+            <h3>About Arewa19 Pyramid</h3>
             <p>
-              A19 is a non-partisan, independent organization dedicated to addressing the pressing concerns of Northern Nigeria. Our mission is to empower the region's youth and women, driving sustainable development and good governance.
+              Arewa19 Pyramid (A19) is a grassroots socio-political movement mobilizing Arewa youth to demand accountability, unity, and integrity from our leaders. We are a network of young leaders, reformers, and activists dedicated to reviving Northern Nigeria industrially, technologically, politically, and economically. We believe that Arewa's progress depends on politically conscious youth who hold leaders accountable and champion value-based governance.
             </p>
             <ul>
               <li>
-                <i className="bi bi-diagram-3"></i>
+                <i className="bi bi-shield-check"></i>
                 <div>
-                  <h5>Arewa Development</h5>
-                  <p>We strive for comprehensive development in Northern Nigeria, tackling social, economic, and political challenges</p>
+                  <h5>Political Accountability & Unity</h5>
+                  <p>Mobilizing youth to demand integrity, unity, and accountability from politicians while building value-based leadership across Northern Nigeria</p>
                 </div>
               </li>
               <li>
-                <i className="bi bi-fullscreen-exit"></i>
+                <i className="bi bi-graph-up-arrow"></i>
                 <div>
-                  <h5>Good Governance</h5>
-                  <p>We promote transparency, accountability, and inclusive leadership, ensuring effective governance in the region</p>
+                  <h5>Economic & Industrial Mobilization</h5>
+                  <p>Reviving Arewa's industrial capacity and economic potential through advocacy, entrepreneurship support, and strategic economic mobilization</p>
                 </div>
               </li>
               <li>
-                <i className="bi bi-broadcast"></i>
+                <i className="bi bi-people-fill"></i>
                 <div>
-                  <h5>Entrepreneurship Development</h5>
-                  <p>We equip women and youth with skills and resources to thrive in business, fostering economic growth</p>
+                  <h5>Civic Engagement & Education</h5>
+                  <p>Building politically conscious citizens through civic education, leadership training, and grassroots organizing supported by modern communication tools</p>
                 </div>
               </li>
             </ul>
             <p>
-              A19 operates with a clear mission: to inspire and equip individuals with the skills, resources, and opportunities necessary to thrive in an ever-changing world. The foundation focuses on key areas such as education, economic empowerment, community development, and the promotion of good governance.
+              Born from the urgency to address declining civic participation, leadership vacuum, and economic stagnation, A19 operates as a non-partisan, values-driven institution. Through community cells across all 19 Northern states, we connect local action to broader mobilization — from civic education campaigns and political leadership academies to economic empowerment programs and diaspora collaborations. Our ultimate goal is to mobilize one million active youth and civic leaders who will rebuild Northern Nigeria into a peaceful, progressive, and economically vibrant region.
             </p>
           </div>
         </div>

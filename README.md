@@ -1,95 +1,11 @@
-# Arewa19 Pyramid - Next.js Website
+Summary — What A19 Is All About
 
-This is the Next.js version of the Arewa19 Pyramid website, converted from the original HTML and Bootstrap CSS implementation.
+Arewa19 Pyramid (A19) is a digital-first socio-political movement dedicated to redefining the future of Northern Nigeria through technology, civic education, and narrative transformation. It is a grassroots network of young innovators, creators, leaders, and reformers who believe that political progress in the North must begin with information power, digital literacy, and value-based leadership.
 
-## Getting Started
+Born from the urgency to address the region’s declining civic participation, misinformation, and leadership vacuum, A19 harnesses the influence of social media, civic technology, and narrative engineering to build an informed, united, and visionary youth population. Through its digital platforms and community cells across all 19 Northern states, the movement trains, mobilizes, and empowers a new generation of Northern voices who are tech-savvy, politically conscious, and socially responsible.
 
-First, install the dependencies:
+A19 operates as a non-partisan, values-driven institution, using storytelling, data, and collaboration to shape policies, challenge stereotypes, and strengthen governance accountability. It connects local action to digital innovation — from civic education campaigns and political leadership academies to media labs, innovation hubs, and diaspora collaborations.
 
-```bash
-npm install
-# or
-yarn install
-```
+The ultimate goal of A19 is to create one million digital citizens and civic leaders who will rebuild Northern Nigeria into a peaceful, progressive, and globally competitive region — a North that leads with knowledge, speaks with one voice, and thrives through technology.
 
-Then, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Project Structure
-
-- `/pages` - Contains all Next.js pages
-  - `index.js` - Homepage
-  - `gallery.js` - Gallery page
-  - `community.js` - Community page
-  - `404.js` - Custom 404 page
-  - `_app.js` - Custom App component
-  - `_document.js` - Custom Document component
-
-- `/components` - Reusable React components
-  - `Header.js` - Navigation header
-  - `Footer.js` - Page footer
-  - `HeroSection.js` - Hero carousel
-  - `AboutSection.js` - About section
-  - `StatsSection.js` - Statistics section
-  - `ServicesSection.js` - Services/Ideology section
-  - `Banner.js` - Scrolling banner
-  - `CallToAction.js` - CTA section
-  - `TestimonialsSection.js` - Testimonials section
-  - `GallerySection.js` - Gallery grid with filtering
-  - `TeamSection.js` - Team members display
-  - `ContactSection.js` - Contact form
-
-- `/styles` - CSS styles
-  - `globals.css` - Global styles
-  - `404.module.css` - Styles for the 404 page
-
-- `/public` - Static assets
-  - `/assets` - Images, CSS, and JavaScript files
-  - `/assets/vendor` - Third-party libraries
-
-## Notes on Conversion
-
-1. The website maintains all the original design and functionality
-2. CSS is imported from the original files
-3. Third-party libraries (Bootstrap, AOS, GLightbox, etc.) are now properly integrated with Next.js
-4. All links use Next.js `Link` component for better performance
-5. JavaScript functionality is properly initialized using React's `useEffect` hooks
-
-## Deployment
-
-To build for production:
-
-```bash
-npm run build
-# or
-yarn build
-```
-
-Then, start the production server:
-
-```bash
-npm run start
-# or
-yarn start
-```
-
-## Firebase Deployment (Optional)
-
-If you want to continue using Firebase for deployment, install the Firebase CLI:
-
-```bash
-npm install -g firebase-tools
-```
-
-Then deploy:
-
-```bash
-firebase deploy
-```
+A19: Rewriting the Arewa Story — Digitally, Politically, and Powerfully.

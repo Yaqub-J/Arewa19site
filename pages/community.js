@@ -10,7 +10,8 @@ export default function Community() {
     <div className="starter-page-page">
       <Head>
         <title>Community - Arewa19 Pyramid</title>
-        <meta name="description" content="Join the Arewa19 community and be part of the movement transforming Northern Nigeria" />
+        <meta name="description" content="Meet our team and join the A19 grassroots movement. Connect with civic leaders, activists, and change-makers mobilizing for Arewa's political and economic progress." />
+        <meta name="keywords" content="Arewa19 community, Northern Nigeria leaders, grassroots mobilization, civic engagement, youth movement, political activism" />
       </Head>
 
       <Header />

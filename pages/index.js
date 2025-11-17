@@ -10,11 +10,12 @@ import ServicesSection from '../components/ServicesSection';
 import CallToAction from '../components/CallToAction';
 import TestimonialsSection from '../components/TestimonialsSection';
 import ContactSection from '../components/ContactSection';
+import SocialMediaPopup from '../components/SocialMediaPopup';
 
 export default function Home() {
   useEffect(() => {
     // Any page-specific JavaScript can go here
-    
+
     // Initialize AOS again for this specific page if needed
     if (typeof window !== 'undefined') {
       const AOS = require('aos');
@@ -25,12 +26,13 @@ export default function Home() {
   return (
     <div className="index-page">
       <Head>
-        <title>Index - Arewa19 Pyramid</title>
-        <meta name="description" content="Arewa19 Pyramid - Empowering Northern Nigeria through grassroots development" />
+        <title>Arewa19 Pyramid - Grassroots Movement for Arewa Mobilization</title>
+        <meta name="description" content="A19 is mobilizing Arewa youth for political accountability, economic empowerment, and industrial progress. Join the grassroots movement demanding unity, integrity, and accountability from our leaders across 19 Northern states." />
+        <meta name="keywords" content="Arewa19, Northern Nigeria, grassroots mobilization, political accountability, civic education, governance, youth empowerment, economic development, industrial revival" />
       </Head>
 
       <Header />
-      
+
       <main className="main">
         <HeroSection />
         <StatsSection />
@@ -39,7 +41,7 @@ export default function Home() {
         <ServicesSection />
         <CallToAction />
         <TestimonialsSection />
-        <ContactSection 
+        <ContactSection
           pageType="registration"
           sectionTitle="Registration"
           sectionDescription="Join our community"
@@ -50,6 +52,9 @@ export default function Home() {
       </main>
 
       <Footer />
+
+      {/* Social Media Follow Popup */}
+      <SocialMediaPopup />
     </div>
   );
 }
