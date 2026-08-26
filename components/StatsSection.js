@@ -1,51 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const StatsSection = () => {
-  const [count1, setCount1] = useState(0);
-  const [count2, setCount2] = useState(0);
-  const [count3, setCount3] = useState(0);
-  const [count4, setCount4] = useState(0);
-  const timersRef = useRef({ timers: [], timeouts: [] });
+  const [count1, setCount1] = useState(1000000);
+  const [count2, setCount2] = useState(19);
+  const [count3, setCount3] = useState(5000);
+  const [count4, setCount4] = useState(50);
 
   useEffect(() => {
-    // Only run once
-    if (timersRef.current.timers.length > 0) return;
+    const startTime = Date.now();
+    const duration = 2000; // 2 seconds
+    const targets = [1000000, 19, 5000, 50];
+    const setters = [setCount1, setCount2, setCount3, setCount4];
 
-    const animateCounter = (target, setter) => {
-      const duration = 2000; // 2 seconds
-      const steps = 60;
-      const intervalTime = duration / steps;
-      
-      let current = 0;
-      let stepCount = 0;
-      
-      const timer = setInterval(() => {
-        stepCount++;
-        current = Math.floor((target / steps) * stepCount);
-        
-        if (stepCount >= steps) {
-          setter(target);
-          clearInterval(timer);
-        } else {
-          setter(current);
-        }
-      }, intervalTime);
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
 
-      timersRef.current.timers.push(timer);
-      return timer;
+      targets.forEach((target, index) => {
+        const current = Math.floor(target * progress);
+        setters[index](current);
+      });
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Ensure final values are set
+        targets.forEach((target, index) => {
+          setters[index](target);
+        });
+      }
     };
 
-    // Start animation immediately
-    const timer1 = animateCounter(1000000, setCount1);
-    const timer2 = animateCounter(19, setCount2);
-    const timer3 = animateCounter(5000, setCount3);
-    const timer4 = animateCounter(50, setCount4);
-
-    // Cleanup function
-    return () => {
-      timersRef.current.timers.forEach(timer => clearInterval(timer));
-      timersRef.current.timeouts.forEach(timeout => clearTimeout(timeout));
-    };
+    requestAnimationFrame(animate);
   }, []);
 
   const formatNumber = (num) => {
