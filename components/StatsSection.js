@@ -1,16 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const StatsSection = () => {
   const [count1, setCount1] = useState(1000000);
   const [count2, setCount2] = useState(19);
   const [count3, setCount3] = useState(5000);
   const [count4, setCount4] = useState(50);
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
+    // Prevent animation from running twice in Strict Mode
+    if (hasRunRef.current) return;
+    hasRunRef.current = true;
+
     const startTime = Date.now();
     const duration = 2000; // 2 seconds
     const targets = [1000000, 19, 5000, 50];
     const setters = [setCount1, setCount2, setCount3, setCount4];
+    let animationFrameId;
 
     const animate = () => {
       const elapsed = Date.now() - startTime;
@@ -22,7 +28,7 @@ const StatsSection = () => {
       });
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(animate);
       } else {
         // Ensure final values are set
         targets.forEach((target, index) => {
@@ -31,7 +37,13 @@ const StatsSection = () => {
       }
     };
 
-    requestAnimationFrame(animate);
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, []);
 
   const formatNumber = (num) => {
