@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const StatsSection = () => {
-  const [count1, setCount1] = useState(1000000);
+  const [count1, setCount1] = useState(27000000);
   const [count2, setCount2] = useState(19);
   const [count3, setCount3] = useState(5000);
   const [count4, setCount4] = useState(50);
@@ -28,13 +28,8 @@ const StatsSection = () => {
       return timer;
     };
 
-    // Reset counters to 0 before animating
-    setCount1(0);
-    setCount2(0);
-    setCount3(0);
-    setCount4(0);
 
-    const timer1 = animateCounter(1000000, setCount1);
+    const timer1 = animateCounter(27000000, setCount1);
     const timer2 = animateCounter(19, setCount2);
     const timer3 = animateCounter(5000, setCount3);
     const timer4 = animateCounter(50, setCount4);
