@@ -1,12 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const StatsSection = () => {
   const [count1, setCount1] = useState(0);
   const [count2, setCount2] = useState(0);
   const [count3, setCount3] = useState(0);
   const [count4, setCount4] = useState(0);
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
+    // Only animate once
+    if (hasAnimated.current) return;
+    hasAnimated.current = true;
+
     // Animate counters
     const duration = 2000; // 2 seconds
     const steps = 60;
