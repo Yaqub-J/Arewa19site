@@ -1,50 +1,58 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 const StatsSection = () => {
-  const [count1, setCount1] = useState(0);
-  const [count2, setCount2] = useState(0);
-  const [count3, setCount3] = useState(0);
-  const [count4, setCount4] = useState(0);
-  const hasAnimated = useRef(false);
+  const [count1, setCount1] = useState(1000000);
+  const [count2, setCount2] = useState(19);
+  const [count3, setCount3] = useState(5000);
+  const [count4, setCount4] = useState(50);
 
-  useEffect(() => {
-    // Only animate once
-    if (hasAnimated.current) return;
-    hasAnimated.current = true;
-
-    // Animate counters
-    const duration = 2000; // 2 seconds
-    const steps = 60;
-    const intervalTime = duration / steps;
-
+  useLayoutEffect(() => {
     const animateCounter = (target, setter) => {
+      const duration = 2000; // 2 seconds
+      const steps = 60;
+      const intervalTime = duration / steps;
+      
       let current = 0;
-      const increment = target / steps;
+      let stepCount = 0;
+      
       const timer = setInterval(() => {
-        current += increment;
-        if (current >= target) {
+        stepCount++;
+        current = Math.floor((target / steps) * stepCount);
+        
+        if (stepCount >= steps) {
           setter(target);
           clearInterval(timer);
         } else {
-          setter(Math.floor(current));
+          setter(current);
         }
       }, intervalTime);
 
       return timer;
     };
 
-    const timer1 = animateCounter(1000000, setCount1);
-    const timer2 = animateCounter(19, setCount2);
-    const timer3 = animateCounter(5000, setCount3);
-    const timer4 = animateCounter(50, setCount4);
+    // Start with 0
+    setCount1(0);
+    setCount2(0);
+    setCount3(0);
+    setCount4(0);
 
-    // Cleanup
-    return () => {
-      clearInterval(timer1);
-      clearInterval(timer2);
-      clearInterval(timer3);
-      clearInterval(timer4);
-    };
+    // Small delay to ensure state updates before animation starts
+    const delay = setTimeout(() => {
+      const timer1 = animateCounter(1000000, setCount1);
+      const timer2 = animateCounter(19, setCount2);
+      const timer3 = animateCounter(5000, setCount3);
+      const timer4 = animateCounter(50, setCount4);
+
+      return () => {
+        clearTimeout(delay);
+        clearInterval(timer1);
+        clearInterval(timer2);
+        clearInterval(timer3);
+        clearInterval(timer4);
+      };
+    }, 50);
+
+    return () => clearTimeout(delay);
   }, []);
 
   const formatNumber = (num) => {
