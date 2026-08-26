@@ -74,23 +74,6 @@ function MyApp({ Component, pageProps }) {
     const scrollCleanup = handleNavAndScroll();
     const mobileNavCleanup = handleMobileNav();
     
-    // Initialize PureCounter if present on page
-    const initPureCounter = () => {
-      if (document.querySelector('.purecounter')) {
-        // PureCounter will be loaded via Script tag in the return section
-        // This will check if the global PureCounter object exists and initialize it
-        if (typeof window.PureCounter !== 'undefined') {
-          new window.PureCounter();
-        } else {
-          // If PureCounter isn't loaded yet, try again after a delay
-          setTimeout(initPureCounter, 1000);
-        }
-      }
-    };
-    
-    // Call with a slight delay to ensure DOM is ready
-    setTimeout(initPureCounter, 500);
-    
     // Clean up event listeners on component unmount
     return () => {
       if (scrollCleanup) scrollCleanup();
@@ -114,43 +97,6 @@ function MyApp({ Component, pageProps }) {
         id="bootstrap-cdn"
         strategy="beforeInteractive"
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-      />
-      
-      {/* PureCounter script */}
-      <Script
-        id="purecounter-script"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.PureCounter = function() {
-              var self = this;
-              this.start = function() {
-                const elements = document.querySelectorAll('.purecounter');
-                elements.forEach(function(el) {
-                  const start = parseInt(el.dataset.purecounterStart || 0);
-                  const end = parseInt(el.dataset.purecounterEnd || 0);
-                  const duration = parseInt(el.dataset.purecounterDuration || 2);
-                  let count = start;
-                  const step = (end - start) / (duration * 50);
-                  
-                  function updateCounter() {
-                    count += step;
-                    if ((step > 0 && count >= end) || (step < 0 && count <= end)) {
-                      count = end;
-                      el.textContent = end;
-                      return;
-                    }
-                    el.textContent = Math.round(count);
-                    requestAnimationFrame(updateCounter);
-                  }
-                  
-                  requestAnimationFrame(updateCounter);
-                });
-              };
-              this.start();
-            };
-          `
-        }}
       />
       
       {/* External CSS stylesheets moved to _document.js */}
