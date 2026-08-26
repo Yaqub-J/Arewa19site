@@ -6,7 +6,7 @@ const StatsSection = () => {
           <div className="col-lg-3 col-md-6">
             <div className="stats-item">
               <i className="bi bi-people"></i>
-              <span className="purecounter" data-purecounterStart="0" data-purecounterEnd="1000000" data-purecounterDuration="2">1,000,000</span>
+              <span className="purecounter" data-purecounterStart="0" data-purecounterEnd="1000000" data-purecounterDuration="2">27,000,000</span>
               <p><strong>Youth Mobilized</strong> <span>Target</span></p>
             </div>
           </div>
