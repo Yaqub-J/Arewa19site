@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react';
 
 const StatsSection = () => {
-  const [count1, setCount1] = useState(0);
-  const [count2, setCount2] = useState(0);
-  const [count3, setCount3] = useState(0);
-  const [count4, setCount4] = useState(0);
-  const [mounted, setMounted] = useState(false);
+  const [count1, setCount1] = useState(1000000);
+  const [count2, setCount2] = useState(19);
+  const [count3, setCount3] = useState(5000);
+  const [count4, setCount4] = useState(50);
 
   useEffect(() => {
-    setMounted(true);
-
     // Animate counters
     const duration = 2000; // 2 seconds
     const steps = 60;
@@ -31,6 +28,12 @@ const StatsSection = () => {
       return timer;
     };
 
+    // Reset counters to 0 before animating
+    setCount1(0);
+    setCount2(0);
+    setCount3(0);
+    setCount4(0);
+
     const timer1 = animateCounter(1000000, setCount1);
     const timer2 = animateCounter(19, setCount2);
     const timer3 = animateCounter(5000, setCount3);
@@ -48,49 +51,6 @@ const StatsSection = () => {
   const formatNumber = (num) => {
     return num.toLocaleString();
   };
-
-  // Don't show 0 on server-side render
-  if (!mounted) {
-    return (
-      <section id="stats" className="stats section">
-        <div className="container" data-aos="fade-up" data-aos-delay="100">
-          <div className="row gy-4">
-            <div className="col-lg-3 col-md-6">
-              <div className="stats-item">
-                <i className="bi bi-people"></i>
-                <span className="purecounter">1,000,000</span>
-                <p><strong>Youth Mobilized</strong> <span>Target</span></p>
-              </div>
-            </div>
-
-            <div className="col-lg-3 col-md-6">
-              <div className="stats-item">
-                <i className="bi bi-map"></i>
-                <span className="purecounter">19</span>
-                <p><strong>Northern States</strong> <span>Coverage</span></p>
-              </div>
-            </div>
-
-            <div className="col-lg-3 col-md-6">
-              <div className="stats-item">
-                <i className="bi bi-award"></i>
-                <span className="purecounter">5,000</span>
-                <p><strong>Civic Leaders</strong> <span>Trained</span></p>
-              </div>
-            </div>
-
-            <div className="col-lg-3 col-md-6">
-              <div className="stats-item">
-                <i className="bi bi-laptop"></i>
-                <span className="purecounter">50</span>
-                <p><strong>Innovation Hubs</strong> <span>& Programs</span></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section id="stats" className="stats section">
