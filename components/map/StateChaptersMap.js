@@ -15,13 +15,14 @@ const maxBounds = ([x0, y0, x1, y1]) => [[x0 - 2, y0 - 1.5], [x1 + 2, y1 + 1.5]]
 let protocolAdded = false;
 
 /**
- * Drill-down map of the Northern Nigeria state chapters: Region → Zone → State → LGA.
+ * Full-page drill-down map of the Northern Nigeria state chapters: Region → Zone → State → LGA.
  * chapters: [{ name, capital }] keyed by state name as it appears in admin.json.
- * selectRef: receives a function that selects a state by name, so the page can drive the map.
  */
-export default function StateChaptersMap({ chapters, selectRef }) {
+export default function StateChaptersMap({ chapters }) {
   const { theme } = useTheme();
   const containerRef = useRef(null);
+  const toolbarRef = useRef(null);
+  const panelRef = useRef(null);
   const mapRef = useRef(null);
   const [admin, setAdmin] = useState(null);
   const [ready, setReady] = useState(false);
@@ -62,15 +63,6 @@ export default function StateChaptersMap({ chapters, selectRef }) {
   };
   const selectZone = (id) => setSel({ level: 'zone', zoneId: id, stateId: null, lgaId: null });
 
-  // Let the page select a state by name (the chapter directory below the map)
-  useEffect(() => {
-    if (!selectRef || !geo) return;
-    selectRef.current = (name) => {
-      const s = geo.states.find((x) => x.name.toLowerCase() === name.toLowerCase());
-      if (s) selectState(s.id);
-    };
-  });
-
   useEffect(() => {
     fetch(`${MAP_ROOT}/northern-nigeria/admin.json`)
       .then((r) => r.json())
@@ -89,17 +81,16 @@ export default function StateChaptersMap({ chapters, selectRef }) {
       container: containerRef.current,
       style: buildStyle({ theme, sel: selRef.current, zones: geo.zones, lgaLabels: geo.lgaLabels }),
       bounds: geo.region.bbox,
-      fitBoundsOptions: { padding: 20 },
+      fitBoundsOptions: { padding: fitPadding() },
       maxBounds: maxBounds(geo.region.bbox),
       minZoom: 4,
       maxZoom: 11,
       attributionControl: { compact: true },
       dragRotate: false,
       pitchWithRotate: false,
-      cooperativeGestures: true,
     });
     map.touchZoomRotate.disableRotation();
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-left');
     mapRef.current = map;
 
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12, className: styles.popup });
@@ -173,8 +164,19 @@ export default function StateChaptersMap({ chapters, selectRef }) {
           : sel.level === 'zone'
             ? geo.zoneById[sel.zoneId].bbox
             : geo.region.bbox;
-    map.fitBounds(bbox, { padding: 30, duration: 800, maxZoom: 9 });
+    map.fitBounds(bbox, { padding: fitPadding(), duration: 800, maxZoom: 9 });
   }, [sel, ready, geo]);
+
+  // Keep the selected area clear of the floating toolbar and panel (desktop); on phones they sit outside the map
+  function fitPadding() {
+    const map = containerRef.current.getBoundingClientRect();
+    const pad = { top: 30, right: 30, bottom: 40, left: 30 };
+    const toolbar = toolbarRef.current?.getBoundingClientRect();
+    const panel = panelRef.current?.getBoundingClientRect();
+    if (toolbar && toolbar.bottom > map.top && toolbar.top < map.bottom) pad.top = toolbar.bottom - map.top + 20;
+    if (panel && panel.left > map.left && panel.top < map.bottom) pad.right = map.right - panel.left + 20;
+    return pad;
+  }
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -205,55 +207,62 @@ export default function StateChaptersMap({ chapters, selectRef }) {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.mapCol}>
-        <div className={styles.toolbar}>
-          <nav className={styles.crumbs} aria-label="Map location">
-            <button type="button" onClick={() => setSel(REGION)}>Northern Nigeria</button>
-            {zone && (
-              <>
-                <span aria-hidden="true">›</span>
-                <button type="button" onClick={() => selectZone(zone.id)}>{zone.name}</button>
-              </>
-            )}
-            {state && (
-              <>
-                <span aria-hidden="true">›</span>
-                <button type="button" onClick={() => selectState(state.id)}>{state.name}</button>
-              </>
-            )}
-            {lga && (
-              <>
-                <span aria-hidden="true">›</span>
-                <span className={styles.crumbCurrent}>{lga.name}</span>
-              </>
-            )}
-          </nav>
-          <div className={styles.search}>
-            <i className="bi bi-search" aria-hidden="true"></i>
-            <input
-              type="search"
-              placeholder="Find a state or LGA"
-              aria-label="Find a state or LGA"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && results[0] && pick(results[0])}
-            />
-            {results.length > 0 && (
-              <ul className={styles.results} role="listbox">
-                {results.map((r) => (
-                  <li key={r.id}>
-                    <button type="button" onClick={() => pick(r)}>
-                      <strong>{r.name}</strong>
-                      <span>{r.sub}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+      <div className={styles.map} ref={containerRef}>
+        {!ready && <div className={styles.loading}>Loading map…</div>}
+      </div>
+
+      <div className={styles.toolbar} ref={toolbarRef}>
+        <div className={styles.toolbarTop}>
+          <a href="/" className={styles.logo} aria-label="Arewa19 home">
+            <img src={theme === 'dark' ? '/assets/img/logolight.png' : '/assets/img/logodark.png'} alt="Arewa19" />
+          </a>
+          <div className={styles.titleBlock}>
+            <h1>State Chapters</h1>
+            <nav className={styles.crumbs} aria-label="Map location">
+              <button type="button" onClick={() => setSel(REGION)}>Northern Nigeria</button>
+              {zone && (
+                <>
+                  <span aria-hidden="true">›</span>
+                  <button type="button" onClick={() => selectZone(zone.id)}>{zone.name}</button>
+                </>
+              )}
+              {state && (
+                <>
+                  <span aria-hidden="true">›</span>
+                  <button type="button" onClick={() => selectState(state.id)}>{state.name}</button>
+                </>
+              )}
+              {lga && (
+                <>
+                  <span aria-hidden="true">›</span>
+                  <span className={styles.crumbCurrent}>{lga.name}</span>
+                </>
+              )}
+            </nav>
           </div>
         </div>
-        <div className={styles.map} ref={containerRef}>
-          {!ready && <div className={styles.loading}>Loading map…</div>}
+        <div className={styles.search}>
+          <i className="bi bi-search" aria-hidden="true"></i>
+          <input
+            type="search"
+            placeholder="Find a state or LGA"
+            aria-label="Find a state or LGA"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && results[0] && pick(results[0])}
+          />
+          {results.length > 0 && (
+            <ul className={styles.results} role="listbox">
+              {results.map((r) => (
+                <li key={r.id}>
+                  <button type="button" onClick={() => pick(r)}>
+                    <strong>{r.name}</strong>
+                    <span>{r.sub}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className={styles.legend}>
           {geo?.zones.map((z) => (
@@ -265,7 +274,7 @@ export default function StateChaptersMap({ chapters, selectRef }) {
         </div>
       </div>
 
-      <aside className={styles.panel} aria-live="polite">
+      <aside className={styles.panel} ref={panelRef} aria-live="polite">
         {!geo && <p className="text-muted">Loading chapters…</p>}
 
         {geo && sel.level === 'region' && (
