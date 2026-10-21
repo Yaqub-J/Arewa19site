@@ -2,6 +2,14 @@ import Head from 'next/head';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Banner from '../components/Banner';
+import dynamic from 'next/dynamic';
+import { useRef } from 'react';
+
+// MapLibre needs the browser, so the map only renders client-side
+const StateChaptersMap = dynamic(() => import('../components/map/StateChaptersMap'), {
+  ssr: false,
+  loading: () => <div style={{ height: 560 }} />,
+});
 
 export default function StateChapters() {
   const northernStates = [
@@ -29,6 +37,12 @@ export default function StateChapters() {
 
   const zones = ['North-East', 'North-Central', 'North-West'];
 
+  const selectStateRef = useRef(null);
+  const showState = (name) => {
+    selectStateRef.current?.(name);
+    document.getElementById('chapters-map')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="state-chapters-page">
       <Head>
@@ -52,7 +66,7 @@ export default function StateChapters() {
                 <div className="section-title text-center">
                   <h2>19 Northern States Network</h2>
                   <p className="mt-3">
-                    Arewa19 Pyramid operates through community cells across all 19 Northern states, connecting local grassroots action to digital innovation. Each state chapter serves as a hub for civic education, digital literacy training, and political mobilization.
+                    Arewa19 Pyramid operates through community cells across all 19 Northern states, connecting local grassroots action to digital innovation. Each state chapter serves as a hub for civic education, digital literacy training, and political mobilization. Explore the map to find your chapter.
                   </p>
                 </div>
               </div>
@@ -60,38 +74,39 @@ export default function StateChapters() {
           </div>
         </section>
 
-        {/* States by Zone */}
-        {zones.map((zone, index) => (
-          <section key={zone} className="section" data-aos="fade-up" data-aos-delay={index * 100}>
-            <div className="container">
-              <h3 className="zone-header">{zone} Zone</h3>
-              <div className="row gy-4">
-                {northernStates
-                  .filter(state => state.zone === zone)
-                  .map((state, stateIndex) => (
-                    <div key={state.name} className="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay={stateIndex * 50}>
-                      <div className="state-card">
-                        <div className="d-flex align-items-center mb-3">
-                          <div className="state-icon">
-                            <i className="bi bi-geo-alt-fill"></i>
-                          </div>
-                          <div>
-                            <h4 className="mb-1 card-title">{state.name} State</h4>
-                            <p className="mb-0 text-muted small">{state.capital}</p>
-                          </div>
-                        </div>
-                        <p className="card-description mb-3">Community cell active in {state.capital} and local government areas. Join our grassroots network mobilizing for change.</p>
-                        <div className="d-flex gap-2">
-                          <a href="/get-involved" className="btn btn-sm btn-enhanced">Join Chapter</a>
-                          <a href="/community#contact" className="btn btn-sm btn-outline-enhanced">Contact</a>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
+        {/* Chapters map */}
+        <section className="section" id="chapters-map" data-aos="fade-up">
+          <div className="container">
+            <StateChaptersMap chapters={northernStates} selectRef={selectStateRef} />
+          </div>
+        </section>
+
+        {/* Chapter directory: picks a state on the map */}
+        <section className="section pt-0">
+          <div className="container">
+            <div className="row gy-4">
+              {zones.map((zone) => (
+                <div key={zone} className="col-lg-4">
+                  <h3 className="zone-header">{zone} Zone</h3>
+                  <div className="d-flex flex-wrap gap-2">
+                    {northernStates
+                      .filter(state => state.zone === zone)
+                      .map(state => (
+                        <button
+                          key={state.name}
+                          type="button"
+                          className="btn btn-sm btn-outline-enhanced"
+                          onClick={() => showState(state.name)}
+                        >
+                          {state.name}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          </section>
-        ))}
+          </div>
+        </section>
 
         {/* How State Chapters Work */}
         <section className="section">
