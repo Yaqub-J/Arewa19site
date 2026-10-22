@@ -9,3 +9,27 @@ A19 operates as a non-partisan, values-driven institution, using storytelling, d
 The ultimate goal of A19 is to create one million digital citizens and civic leaders who will rebuild Northern Nigeria into a peaceful, progressive, and globally competitive region — a North that leads with knowledge, speaks with one voice, and thrives through technology.
 
 A19: Rewriting the Arewa Story — Digitally, Politically, and Powerfully.
+
+## Member counts on the State Chapters map
+
+`/state-chapters` shows each area's member count on the map: states at first, a state's LGAs once you zoom into it,
+then an LGA's wards. The counts come from two places (`components/map/members.js`):
+
+- **Existing members** (`MEMBER_BASELINE` in `pages/state-chapters.js`, currently 112,000). Their locations aren't
+  recorded, so they are spread over LGAs in proportion to population, then evenly over each LGA's wards. The page
+  labels this as a demo estimate.
+- **Registrations from the form**, read from its Google Sheet (`pages/api/registrations.js`). They fill the officials
+  structure in sheet order: `OFFICIALS.perState` per state (10), then `perLga` per LGA (1), then `perWard` per ward
+  (1), each round going across all states before the next. The sheet's own state/LGA answers are not used for
+  placement. A new registration takes the next slot and pulses there on the map.
+
+The API returns only each row's matched state/LGA and day, never names or contact details, and caches the sheet for 30
+seconds. The map checks for new registrations every 30 seconds.
+
+Setup:
+
+1. Share the registrations sheet with the service account in `GOOGLE_SERVICE_ACCOUNT_EMAIL` (Viewer is enough).
+2. Set `REGISTRATIONS_SHEET_ID` to the sheet's ID (the long part of its URL between `/d/` and `/edit`).
+3. Optional: `REGISTRATIONS_SHEET_RANGE` for the tab (default: "Form Responses", else the first tab), and
+   `REGISTRATIONS_STATE_COLUMN` / `REGISTRATIONS_LGA_COLUMN` / `REGISTRATIONS_TIME_COLUMN` (column letters) if the
+   header row doesn't contain "State of Residence", "LGA" and "Timestamp".
