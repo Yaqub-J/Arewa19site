@@ -30,6 +30,7 @@ export const MAP_COLORS = {
     label: '#1f2429',
     labelHalo: '#ffffff',
     dot: '#b8400f',
+    memberDot: '#5a3a12',
     dotStroke: '#ffffff',
   },
   dark: {
@@ -43,6 +44,7 @@ export const MAP_COLORS = {
     label: '#ffffff',
     labelHalo: '#121212',
     dot: '#fff4d6',
+    memberDot: '#f3d9a4',
     dotStroke: '#121212',
   },
 };
@@ -62,9 +64,10 @@ export function activeLayer(sel) {
 /**
  * Builds the whole style for a theme and drill-down position.
  * sel: { level: 'region' | 'zone' | 'state' | 'lga', zoneId, stateId, lgaId }
- * zones: the zones from admin.json; lgaLabels: GeoJSON points for LGA names; registrations: GeoJSON points.
+ * zones: the zones from admin.json; lgaLabels: GeoJSON points for LGA names.
+ * The registrations source starts empty: its points are pushed with setData, so restyling never diffs them.
  */
-export function buildStyle({ theme, sel, zones, lgaLabels, registrations }) {
+export function buildStyle({ theme, sel, zones, lgaLabels }) {
   const c = MAP_COLORS[theme];
   const zc = ZONE_COLORS[theme];
   const lvl = sel.level;
@@ -179,15 +182,28 @@ export function buildStyle({ theme, sel, zones, lgaLabels, registrations }) {
       paint: { 'line-color': c.hover, 'line-width': 2, 'line-opacity': ['case', hovered, 1, 0] },
     },
 
-    // One dot per registration, placed in its LGA (or its state when the LGA wasn't recognised)
+    // One dot per member, placed in its LGA (or its state when the LGA wasn't recognised)
     {
       id: 'registration-dots',
       type: 'circle',
       source: 'registrations',
+      // Existing members (the demo baseline) underneath, live form registrations on top
+      filter: ['!', ['get', 'live']],
+      paint: {
+        'circle-color': c.memberDot,
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 0.6, 7, 1.2, 10, 2.5],
+        'circle-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.35, 8, 0.6],
+      },
+    },
+    {
+      id: 'registration-dots-live',
+      type: 'circle',
+      source: 'registrations',
+      filter: ['get', 'live'],
       paint: {
         'circle-color': c.dot,
         'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 7, 3.5, 10, 5.5],
-        'circle-opacity': 0.85,
+        'circle-opacity': 0.9,
         'circle-stroke-color': c.dotStroke,
         'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 4, 0.4, 10, 1],
         'circle-stroke-opacity': 0.8,
@@ -244,8 +260,35 @@ export function buildStyle({ theme, sel, zones, lgaLabels, registrations }) {
       },
       mask: { type: 'geojson', data: `${window.location.origin}${MAP_ROOT}/northern-nigeria/region-mask.geojson` },
       'lga-labels': { type: 'geojson', data: lgaLabels },
-      registrations: { type: 'geojson', data: registrations },
+      registrations: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
     },
     layers,
   };
+}
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * Applies the differences between two styles from buildStyle() layer by layer. Used instead of
+ * setStyle(…, { diff: true }), which would compare (and reset) the 100k+ registration points on every change.
+ */
+export function updateStyle(map, prev, next) {
+  next.layers.forEach((layer, i) => {
+    const old = prev.layers.find((l) => l.id === layer.id);
+    if (!old) return;
+    // A layer that switches source layer (states ↔ lgas) has to be re-added in its place
+    if (old['source-layer'] !== layer['source-layer']) {
+      map.removeLayer(layer.id);
+      map.addLayer(layer, next.layers.slice(i + 1).find((l) => map.getLayer(l.id))?.id);
+      return;
+    }
+    if (!same(old.filter, layer.filter)) map.setFilter(layer.id, layer.filter ?? null);
+    for (const [kind, set] of [['paint', 'setPaintProperty'], ['layout', 'setLayoutProperty']]) {
+      const a = old[kind] ?? {};
+      const b = layer[kind] ?? {};
+      for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+        if (!same(a[key], b[key])) map[set](layer.id, key, b[key]);
+      }
+    }
+  });
 }

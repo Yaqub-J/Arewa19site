@@ -3,8 +3,8 @@ import maplibregl from 'maplibre-gl';
 import { Protocol } from 'pmtiles';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '../ThemeContext';
-import { MAP_ROOT, ZONE_COLORS, buildStyle } from './style';
-import { countRegistrations, registrationsGeoJSON, useRegistrations } from './registrations';
+import { MAP_ROOT, ZONE_COLORS, buildStyle, updateStyle } from './style';
+import { countRegistrations, registrationsGeoJSON, useRegistrations, withBaseline } from './registrations';
 import styles from '../../styles/StateChaptersMap.module.css';
 
 const REGION = { level: 'region', zoneId: null, stateId: null, lgaId: null };
@@ -18,20 +18,22 @@ let protocolAdded = false;
 /**
  * Full-page drill-down map of the Northern Nigeria state chapters: Region → Zone → State → LGA.
  * chapters: [{ name, capital }] keyed by state name as it appears in admin.json.
+ * memberBaseline: existing members to show before the form's registrations (demo; placed by population).
  */
-export default function StateChaptersMap({ chapters }) {
+export default function StateChaptersMap({ chapters, memberBaseline = 0 }) {
   const { theme } = useTheme();
   const containerRef = useRef(null);
   const toolbarRef = useRef(null);
   const panelRef = useRef(null);
   const mapRef = useRef(null);
+  const styleRef = useRef(null);
   const [admin, setAdmin] = useState(null);
   const [ready, setReady] = useState(false);
   const [sel, setSel] = useState(REGION);
   const [query, setQuery] = useState('');
   const selRef = useRef(sel);
   selRef.current = sel;
-  const { data: regData, fresh } = useRegistrations();
+  const { data: liveData, fresh } = useRegistrations();
 
   const geo = useMemo(() => {
     if (!admin) return null;
@@ -55,10 +57,9 @@ export default function StateChaptersMap({ chapters }) {
     };
   }, [admin, chapters]);
 
+  const regData = useMemo(() => withBaseline(liveData, geo, memberBaseline), [liveData, geo, memberBaseline]);
   const regGeo = useMemo(() => registrationsGeoJSON(regData, geo), [regData, geo]);
   const regCount = useMemo(() => countRegistrations(regData, geo), [regData, geo]);
-  const regRef = useRef(regGeo);
-  regRef.current = regGeo;
 
   const selectState = (id) => {
     const s = geo.stateById[id];
@@ -84,15 +85,10 @@ export default function StateChaptersMap({ chapters }) {
       maplibregl.addProtocol('pmtiles', new Protocol().tile);
       protocolAdded = true;
     }
+    styleRef.current = buildStyle({ theme, sel: selRef.current, zones: geo.zones, lgaLabels: geo.lgaLabels });
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: buildStyle({
-        theme,
-        sel: selRef.current,
-        zones: geo.zones,
-        lgaLabels: geo.lgaLabels,
-        registrations: regRef.current,
-      }),
+      style: styleRef.current,
       bounds: geo.region.bbox,
       fitBoundsOptions: { padding: fitPadding() },
       maxBounds: maxBounds(geo.region.bbox),
@@ -154,18 +150,25 @@ export default function StateChaptersMap({ chapters }) {
       map.remove();
       mapRef.current = null;
     };
-    // The map is created once; theme and selection changes go through setStyle below
+    // The map is created once; theme and selection changes go through updateStyle below
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geo]);
 
-  // Theme and drill-down changes become cheap filter/paint updates with a style diff
+  // Theme and drill-down changes become cheap filter/paint updates
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    map.setStyle(buildStyle({ theme, sel, zones: geo.zones, lgaLabels: geo.lgaLabels, registrations: regGeo }), {
-      diff: true,
-    });
-  }, [theme, sel, ready, geo, regGeo]);
+    const next = buildStyle({ theme, sel, zones: geo.zones, lgaLabels: geo.lgaLabels });
+    updateStyle(map, styleRef.current, next);
+    styleRef.current = next;
+  }, [theme, sel, ready, geo]);
+
+  // Dots go straight to the source, so a drill-down or theme change never re-processes 100k+ points
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    map.getSource('registrations')?.setData(regGeo);
+  }, [regGeo, ready]);
 
   // New registrations since the last poll pulse for a few seconds where they landed
   useEffect(() => {
@@ -280,8 +283,14 @@ export default function StateChaptersMap({ chapters }) {
         {regData && (
           <p className={styles.live}>
             <span className={styles.liveDot} aria-hidden="true"></span>
-            <strong>{fmt(regCount.all)}</strong> registered
+            <strong>{fmt(regCount.all)}</strong> members
             {regCount.today > 0 && <span className={styles.today}>+{fmt(regCount.today)} today</span>}
+          </p>
+        )}
+        {memberBaseline > 0 && (
+          <p className={styles.demoNote}>
+            <span>Demo</span> {fmt(memberBaseline)} existing members placed by population estimate; new sign-ups from
+            the registration form are live.
           </p>
         )}
         <div className={styles.search}>
@@ -328,7 +337,7 @@ export default function StateChaptersMap({ chapters }) {
               Click a state on the map, or pick a zone, to find its chapter and the local governments it covers.
             </p>
             <dl className={styles.stats}>
-              {regData && <div><dt>Registered</dt><dd>{fmt(regCount.all)}</dd></div>}
+              {regData && <div><dt>Members</dt><dd>{fmt(regCount.all)}</dd></div>}
               <div><dt>Zones</dt><dd>{geo.zones.length}</dd></div>
               <div><dt>States</dt><dd>{geo.states.length}</dd></div>
               <div><dt>LGAs</dt><dd>{geo.lgas.length}</dd></div>
@@ -337,7 +346,7 @@ export default function StateChaptersMap({ chapters }) {
               <button key={z.id} type="button" className={styles.zoneRow} onClick={() => selectZone(z.id)}>
                 <span className={styles.swatch} style={{ background: zoneColors[z.id] }}></span>
                 <span>{z.name}</span>
-                <small>{regData ? `${fmt(regCount.zone[z.id] ?? 0)} registered` : `${z.states.length} states`}</small>
+                <small>{regData ? `${fmt(regCount.zone[z.id] ?? 0)} members` : `${z.states.length} states`}</small>
               </button>
             ))}
           </>
@@ -348,7 +357,7 @@ export default function StateChaptersMap({ chapters }) {
             <p className={styles.kicker}>Geopolitical zone</p>
             <h4>{zone.name}</h4>
             <dl className={styles.stats}>
-              {regData && <div><dt>Registered</dt><dd>{fmt(regCount.zone[zone.id] ?? 0)}</dd></div>}
+              {regData && <div><dt>Members</dt><dd>{fmt(regCount.zone[zone.id] ?? 0)}</dd></div>}
               <div><dt>States</dt><dd>{zone.states.length}</dd></div>
               <div><dt>Population (est.)</dt><dd>{fmt(zone.population)}</dd></div>
             </dl>
@@ -358,7 +367,7 @@ export default function StateChaptersMap({ chapters }) {
                   <button type="button" onClick={() => selectState(s.id)}>
                     <span>{s.name}</span>
                     <small>
-                      {regData ? `${fmt(regCount.state[s.id] ?? 0)} registered` : geo.chapterByState[s.id]?.capital}
+                      {regData ? `${fmt(regCount.state[s.id] ?? 0)} members` : geo.chapterByState[s.id]?.capital}
                     </small>
                   </button>
                 </li>
@@ -381,7 +390,7 @@ export default function StateChaptersMap({ chapters }) {
                 <p className={styles.kicker}>Local government area</p>
                 <h5>{lga.name}</h5>
                 <dl className={styles.stats}>
-                  {regData && <div><dt>Registered</dt><dd>{fmt(regCount.lga[lga.id] ?? 0)}</dd></div>}
+                  {regData && <div><dt>Members</dt><dd>{fmt(regCount.lga[lga.id] ?? 0)}</dd></div>}
                   <div><dt>Wards</dt><dd>{lga.wardCount}</dd></div>
                   <div><dt>Population (est.)</dt><dd>{fmt(lga.population)}</dd></div>
                 </dl>
@@ -396,7 +405,7 @@ export default function StateChaptersMap({ chapters }) {
                   grassroots network mobilizing for change.
                 </p>
                 <dl className={styles.stats}>
-                  {regData && <div><dt>Registered</dt><dd>{fmt(regCount.state[state.id] ?? 0)}</dd></div>}
+                  {regData && <div><dt>Members</dt><dd>{fmt(regCount.state[state.id] ?? 0)}</dd></div>}
                   <div><dt>LGAs</dt><dd>{state.lgaCount}</dd></div>
                   <div><dt>Wards</dt><dd>{state.wardCount}</dd></div>
                   <div><dt>Population (est.)</dt><dd>{fmt(state.population)}</dd></div>

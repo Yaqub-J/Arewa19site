@@ -424,3 +424,22 @@
     box-shadow: 0 0 0 22px rgba(255, 107, 0, 0);
   }
 }
+
+.demoNote {
+  margin: -4px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0.75;
+}
+
+.demoNote span {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+}

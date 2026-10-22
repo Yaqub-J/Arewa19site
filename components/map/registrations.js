@@ -58,6 +58,35 @@ function rand(seed) {
 }
 
 /**
+ * Demo baseline: `count` existing members spread over the LGAs in proportion to population (largest remainder),
+ * as points shaped like the API's. Their rows are negative so they never collide with sheet rows or pulse as new.
+ */
+function baselinePoints(geo, count) {
+  const total = geo.lgas.reduce((sum, l) => sum + l.population, 0);
+  const shares = geo.lgas.map((l) => {
+    const exact = (count * l.population) / total;
+    return { l, n: Math.floor(exact), rest: exact - Math.floor(exact) };
+  });
+  let left = count - shares.reduce((sum, x) => sum + x.n, 0);
+  [...shares].sort((a, b) => b.rest - a.rest).slice(0, left).forEach((x) => x.n++);
+  const points = [];
+  for (const { l, n } of shares) {
+    for (let i = 0; i < n; i++) points.push([-(points.length + 1), l.state, l.id, null]);
+  }
+  return points;
+}
+
+const baselineCache = new WeakMap();
+
+/** Live registrations on top of the demo baseline of existing members (no baseline when `count` is 0). */
+export function withBaseline(data, geo, count) {
+  if (!geo || !count) return data;
+  if (baselineCache.get(geo)?.count !== count) baselineCache.set(geo, { count, points: baselinePoints(geo, count) });
+  const base = baselineCache.get(geo).points;
+  return { ...data, points: data ? base.concat(data.points) : base };
+}
+
+/**
  * Places each registration around its LGA's label point (or its state's, when the LGA wasn't recognised),
  * spread over part of the area so dots don't stack. Positions are indicative: nobody's address is known.
  */
@@ -68,14 +97,14 @@ export function registrationsGeoJSON(data, geo) {
     features: data.points.map(([n, stateId, lgaId]) => {
       const area = (lgaId && geo.lgaById[lgaId]) || geo.stateById[stateId];
       const [x0, y0, x1, y1] = area.bbox;
-      const spread = lgaId ? 0.28 : 0.12;
+      const spread = lgaId ? 0.5 : 0.12;
       const r = rand(n);
       const angle = r() * 2 * Math.PI;
       const dist = Math.sqrt(r());
       const [lng, lat] = area.label;
       return {
         type: 'Feature',
-        properties: { n, state: stateId, lga: lgaId },
+        properties: { n, state: stateId, lga: lgaId, live: n > 0 },
         geometry: {
           type: 'Point',
           coordinates: [

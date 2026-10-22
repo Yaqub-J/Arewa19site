@@ -24,6 +24,10 @@ Setup:
    `REGISTRATIONS_STATE_COLUMN` / `REGISTRATIONS_LGA_COLUMN` / `REGISTRATIONS_TIME_COLUMN` (column letters) if the
    header row doesn't contain "State of Residence", "LGA" and "Timestamp".
 
+Demo baseline: `MEMBER_BASELINE` in `pages/state-chapters.js` (currently 112,000 existing members) is added before
+the form's registrations. Those members have no recorded location, so their dots are spread over the LGAs in proportion
+to population and the page labels them as a demo estimate; set it to `0` to show only the form's registrations.
+
 Answers are matched to the map's state and LGA names with tolerance for typos and common spellings
 (`lib/matchPlace.js`). A registration with an unrecognised LGA is placed in its state; one outside the 19 northern
 states is counted but not drawn. Dots are placed near the middle of the LGA, not at anyone's address.
