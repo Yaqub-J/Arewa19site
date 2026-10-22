@@ -29,6 +29,8 @@ export const MAP_COLORS = {
     hover: '#1f2429',
     label: '#1f2429',
     labelHalo: '#ffffff',
+    dot: '#b8400f',
+    dotStroke: '#ffffff',
   },
   dark: {
     background: '#121212',
@@ -40,6 +42,8 @@ export const MAP_COLORS = {
     hover: '#ffffff',
     label: '#ffffff',
     labelHalo: '#121212',
+    dot: '#fff4d6',
+    dotStroke: '#121212',
   },
 };
 
@@ -58,9 +62,9 @@ export function activeLayer(sel) {
 /**
  * Builds the whole style for a theme and drill-down position.
  * sel: { level: 'region' | 'zone' | 'state' | 'lga', zoneId, stateId, lgaId }
- * zones: the zones from admin.json; lgaLabels: GeoJSON points for LGA names.
+ * zones: the zones from admin.json; lgaLabels: GeoJSON points for LGA names; registrations: GeoJSON points.
  */
-export function buildStyle({ theme, sel, zones, lgaLabels }) {
+export function buildStyle({ theme, sel, zones, lgaLabels, registrations }) {
   const c = MAP_COLORS[theme];
   const zc = ZONE_COLORS[theme];
   const lvl = sel.level;
@@ -175,6 +179,21 @@ export function buildStyle({ theme, sel, zones, lgaLabels }) {
       paint: { 'line-color': c.hover, 'line-width': 2, 'line-opacity': ['case', hovered, 1, 0] },
     },
 
+    // One dot per registration, placed in its LGA (or its state when the LGA wasn't recognised)
+    {
+      id: 'registration-dots',
+      type: 'circle',
+      source: 'registrations',
+      paint: {
+        'circle-color': c.dot,
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 7, 3.5, 10, 5.5],
+        'circle-opacity': 0.85,
+        'circle-stroke-color': c.dotStroke,
+        'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 4, 0.4, 10, 1],
+        'circle-stroke-opacity': 0.8,
+      },
+    },
+
     // State names come from the tiles; LGA names from admin.json so they show at any zoom
     {
       id: 'state-labels',
@@ -225,6 +244,7 @@ export function buildStyle({ theme, sel, zones, lgaLabels }) {
       },
       mask: { type: 'geojson', data: `${window.location.origin}${MAP_ROOT}/northern-nigeria/region-mask.geojson` },
       'lga-labels': { type: 'geojson', data: lgaLabels },
+      registrations: { type: 'geojson', data: registrations },
     },
     layers,
   };

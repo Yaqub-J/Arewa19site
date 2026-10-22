@@ -4,13 +4,14 @@ import { Protocol } from 'pmtiles';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '../ThemeContext';
 import { MAP_ROOT, ZONE_COLORS, buildStyle } from './style';
+import { countRegistrations, registrationsGeoJSON, useRegistrations } from './registrations';
 import styles from '../../styles/StateChaptersMap.module.css';
 
 const REGION = { level: 'region', zoneId: null, stateId: null, lgaId: null };
 const fmt = (n) => (n ?? 0).toLocaleString('en-NG');
 
-// Pan limit: the region's bbox plus a margin
-const maxBounds = ([x0, y0, x1, y1]) => [[x0 - 2, y0 - 1.5], [x1 + 2, y1 + 1.5]];
+// Pan limit: the region's bbox plus a margin, wide enough that the region can sit clear of the floating cards
+const maxBounds = ([x0, y0, x1, y1]) => [[x0 - 5, y0 - 2], [x1 + 5, y1 + 4]];
 
 let protocolAdded = false;
 
@@ -30,6 +31,7 @@ export default function StateChaptersMap({ chapters }) {
   const [query, setQuery] = useState('');
   const selRef = useRef(sel);
   selRef.current = sel;
+  const { data: regData, fresh } = useRegistrations();
 
   const geo = useMemo(() => {
     if (!admin) return null;
@@ -52,6 +54,11 @@ export default function StateChaptersMap({ chapters }) {
       },
     };
   }, [admin, chapters]);
+
+  const regGeo = useMemo(() => registrationsGeoJSON(regData, geo), [regData, geo]);
+  const regCount = useMemo(() => countRegistrations(regData, geo), [regData, geo]);
+  const regRef = useRef(regGeo);
+  regRef.current = regGeo;
 
   const selectState = (id) => {
     const s = geo.stateById[id];
@@ -79,7 +86,13 @@ export default function StateChaptersMap({ chapters }) {
     }
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: buildStyle({ theme, sel: selRef.current, zones: geo.zones, lgaLabels: geo.lgaLabels }),
+      style: buildStyle({
+        theme,
+        sel: selRef.current,
+        zones: geo.zones,
+        lgaLabels: geo.lgaLabels,
+        registrations: regRef.current,
+      }),
       bounds: geo.region.bbox,
       fitBoundsOptions: { padding: fitPadding() },
       maxBounds: maxBounds(geo.region.bbox),
@@ -149,8 +162,31 @@ export default function StateChaptersMap({ chapters }) {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    map.setStyle(buildStyle({ theme, sel, zones: geo.zones, lgaLabels: geo.lgaLabels }), { diff: true });
-  }, [theme, sel, ready, geo]);
+    map.setStyle(buildStyle({ theme, sel, zones: geo.zones, lgaLabels: geo.lgaLabels, registrations: regGeo }), {
+      diff: true,
+    });
+  }, [theme, sel, ready, geo, regGeo]);
+
+  // New registrations since the last poll pulse for a few seconds where they landed
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || fresh.length === 0) return;
+    const rows = new Set(fresh.slice(-50));
+    const markers = regGeo.features
+      .filter((f) => rows.has(f.properties.n))
+      .map((f) => {
+        const el = document.createElement('div');
+        el.className = styles.pulse;
+        return new maplibregl.Marker({ element: el }).setLngLat(f.geometry.coordinates).addTo(map);
+      });
+    const timer = setTimeout(() => markers.forEach((m) => m.remove()), 8000);
+    return () => {
+      clearTimeout(timer);
+      markers.forEach((m) => m.remove());
+    };
+    // Only a new poll result starts a pulse
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fresh, ready]);
 
   // Fit the camera to the selected area
   useEffect(() => {
@@ -241,6 +277,13 @@ export default function StateChaptersMap({ chapters }) {
             </nav>
           </div>
         </div>
+        {regData && (
+          <p className={styles.live}>
+            <span className={styles.liveDot} aria-hidden="true"></span>
+            <strong>{fmt(regCount.all)}</strong> registered
+            {regCount.today > 0 && <span className={styles.today}>+{fmt(regCount.today)} today</span>}
+          </p>
+        )}
         <div className={styles.search}>
           <i className="bi bi-search" aria-hidden="true"></i>
           <input
@@ -285,6 +328,7 @@ export default function StateChaptersMap({ chapters }) {
               Click a state on the map, or pick a zone, to find its chapter and the local governments it covers.
             </p>
             <dl className={styles.stats}>
+              {regData && <div><dt>Registered</dt><dd>{fmt(regCount.all)}</dd></div>}
               <div><dt>Zones</dt><dd>{geo.zones.length}</dd></div>
               <div><dt>States</dt><dd>{geo.states.length}</dd></div>
               <div><dt>LGAs</dt><dd>{geo.lgas.length}</dd></div>
@@ -293,7 +337,7 @@ export default function StateChaptersMap({ chapters }) {
               <button key={z.id} type="button" className={styles.zoneRow} onClick={() => selectZone(z.id)}>
                 <span className={styles.swatch} style={{ background: zoneColors[z.id] }}></span>
                 <span>{z.name}</span>
-                <small>{z.states.length} states</small>
+                <small>{regData ? `${fmt(regCount.zone[z.id] ?? 0)} registered` : `${z.states.length} states`}</small>
               </button>
             ))}
           </>
@@ -304,6 +348,7 @@ export default function StateChaptersMap({ chapters }) {
             <p className={styles.kicker}>Geopolitical zone</p>
             <h4>{zone.name}</h4>
             <dl className={styles.stats}>
+              {regData && <div><dt>Registered</dt><dd>{fmt(regCount.zone[zone.id] ?? 0)}</dd></div>}
               <div><dt>States</dt><dd>{zone.states.length}</dd></div>
               <div><dt>Population (est.)</dt><dd>{fmt(zone.population)}</dd></div>
             </dl>
@@ -312,7 +357,9 @@ export default function StateChaptersMap({ chapters }) {
                 <li key={s.id}>
                   <button type="button" onClick={() => selectState(s.id)}>
                     <span>{s.name}</span>
-                    <small>{geo.chapterByState[s.id]?.capital}</small>
+                    <small>
+                      {regData ? `${fmt(regCount.state[s.id] ?? 0)} registered` : geo.chapterByState[s.id]?.capital}
+                    </small>
                   </button>
                 </li>
               ))}
@@ -334,6 +381,7 @@ export default function StateChaptersMap({ chapters }) {
                 <p className={styles.kicker}>Local government area</p>
                 <h5>{lga.name}</h5>
                 <dl className={styles.stats}>
+                  {regData && <div><dt>Registered</dt><dd>{fmt(regCount.lga[lga.id] ?? 0)}</dd></div>}
                   <div><dt>Wards</dt><dd>{lga.wardCount}</dd></div>
                   <div><dt>Population (est.)</dt><dd>{fmt(lga.population)}</dd></div>
                 </dl>
@@ -348,6 +396,7 @@ export default function StateChaptersMap({ chapters }) {
                   grassroots network mobilizing for change.
                 </p>
                 <dl className={styles.stats}>
+                  {regData && <div><dt>Registered</dt><dd>{fmt(regCount.state[state.id] ?? 0)}</dd></div>}
                   <div><dt>LGAs</dt><dd>{state.lgaCount}</dd></div>
                   <div><dt>Wards</dt><dd>{state.wardCount}</dd></div>
                   <div><dt>Population (est.)</dt><dd>{fmt(state.population)}</dd></div>
@@ -369,6 +418,7 @@ export default function StateChaptersMap({ chapters }) {
                   <li key={l.id}>
                     <button type="button" aria-current={l.id === sel.lgaId} onClick={() => selectLga(l.id)}>
                       <span>{l.name}</span>
+                      {regCount.lga[l.id] > 0 && <small>{fmt(regCount.lga[l.id])}</small>}
                     </button>
                   </li>
                 ))}

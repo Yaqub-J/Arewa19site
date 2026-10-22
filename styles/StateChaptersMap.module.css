@@ -342,6 +342,10 @@
     height: 32px;
   }
 
+  .legend {
+    display: none;
+  }
+
   .titleBlock h1 {
     font-size: 16px;
   }
@@ -357,5 +361,66 @@
     padding: 18px 16px;
     border-radius: 16px 16px 0 0;
     border-width: 1px 0 0;
+  }
+}
+
+/* Live registration counter */
+.live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.live strong {
+  color: var(--heading-color);
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2fa84f;
+  box-shadow: 0 0 0 0 rgba(47, 168, 79, 0.6);
+  animation: livePing 2s infinite;
+}
+
+.today {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2fa84f;
+  background: color-mix(in srgb, #2fa84f, transparent 88%);
+}
+
+@keyframes livePing {
+  70% {
+    box-shadow: 0 0 0 8px rgba(47, 168, 79, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(47, 168, 79, 0);
+  }
+}
+
+/* A new registration landing on the map */
+.pulse {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ff6b00;
+  border: 2px solid #ffffff;
+  pointer-events: none;
+  animation: pulseRing 1.6s ease-out 5;
+}
+
+@keyframes pulseRing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 0 22px rgba(255, 107, 0, 0);
   }
 }
