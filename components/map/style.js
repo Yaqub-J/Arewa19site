@@ -29,9 +29,8 @@ export const MAP_COLORS = {
     hover: '#1f2429',
     label: '#1f2429',
     labelHalo: '#ffffff',
-    dot: '#b8400f',
-    memberDot: '#5a3a12',
-    dotStroke: '#ffffff',
+    count: '#8a3a0c',
+    wardLine: '#a88a4a',
   },
   dark: {
     background: '#121212',
@@ -43,9 +42,8 @@ export const MAP_COLORS = {
     hover: '#ffffff',
     label: '#ffffff',
     labelHalo: '#121212',
-    dot: '#fff4d6',
-    memberDot: '#f3d9a4',
-    dotStroke: '#121212',
+    count: '#ffd27a',
+    wardLine: '#9c8350',
   },
 };
 
@@ -55,7 +53,10 @@ const hovered = ['boolean', ['feature-state', 'hover'], false];
 
 /** The admin layer that is clickable and highlights on hover at each drill-down level. */
 export function activeLayer(sel) {
-  if (sel.level === 'state' || sel.level === 'lga') {
+  if (sel.level === 'lga' || sel.level === 'ward') {
+    return { layer: 'wards', filter: ['==', ['get', 'lga'], sel.lgaId] };
+  }
+  if (sel.level === 'state') {
     return { layer: 'lgas', filter: ['==', ['get', 'state'], sel.stateId] };
   }
   return { layer: 'states', filter: ['has', 'id'] };
@@ -63,11 +64,11 @@ export function activeLayer(sel) {
 
 /**
  * Builds the whole style for a theme and drill-down position.
- * sel: { level: 'region' | 'zone' | 'state' | 'lga', zoneId, stateId, lgaId }
- * zones: the zones from admin.json; lgaLabels: GeoJSON points for LGA names.
- * The registrations source starts empty: its points are pushed with setData, so restyling never diffs them.
+ * sel: { level: 'region' | 'zone' | 'state' | 'lga' | 'ward', zoneId, stateId, lgaId, wardId }
+ * zones: the zones from admin.json.
+ * The counts source starts empty: its label points are pushed with setData whenever the counts change.
  */
-export function buildStyle({ theme, sel, zones, lgaLabels }) {
+export function buildStyle({ theme, sel, zones }) {
   const c = MAP_COLORS[theme];
   const zc = ZONE_COLORS[theme];
   const lvl = sel.level;
@@ -91,14 +92,25 @@ export function buildStyle({ theme, sel, zones, lgaLabels }) {
         ? ['case', inZone, 0.6, 0.12]
         : ['case', isState, 0.18, 0.08];
 
-  const selectedId = sel.lgaId ?? sel.stateId;
-  const selectedLayer = sel.lgaId ? 'lgas' : 'states';
+  const selectedId = sel.wardId ?? sel.lgaId ?? sel.stateId;
+  const selectedLayer = sel.wardId ? 'wards' : sel.lgaId ? 'lgas' : 'states';
+  const inLga = lvl === 'lga' || lvl === 'ward';
+
+  // Which areas carry a count label: states, then the selected state's LGAs, then the selected LGA's wards
+  const countFilter =
+    lvl === 'region'
+      ? ['==', ['get', 'level'], 'state']
+      : lvl === 'zone'
+        ? ['all', ['==', ['get', 'level'], 'state'], ['in', ['get', 'id'], ['literal', zones.find((z) => z.id === sel.zoneId)?.states ?? []]]]
+        : lvl === 'state'
+          ? ['all', ['==', ['get', 'level'], 'lga'], ['==', ['get', 'state'], sel.stateId ?? '']]
+          : ['all', ['==', ['get', 'level'], 'ward'], ['==', ['get', 'lga'], sel.lgaId ?? '']];
 
   const layers = [
     { id: 'background', type: 'background', paint: { 'background-color': c.background } },
 
     // Invisible hit-testing layers used to resolve clicks at any level
-    ...['states', 'lgas'].map((l) => ({
+    ...['states', 'lgas', 'wards'].map((l) => ({
       id: `hit-${l}`,
       type: 'fill',
       source: ADMIN,
@@ -119,6 +131,14 @@ export function buildStyle({ theme, sel, zones, lgaLabels }) {
       source: ADMIN,
       'source-layer': 'lgas',
       filter: sel.lgaId ? ['==', ['get', 'id'], sel.lgaId] : NONE,
+      paint: { 'fill-color': zc[sel.zoneId] ?? zc.NW, 'fill-opacity': lvl === 'ward' ? 0.2 : 0.35 },
+    },
+    {
+      id: 'selected-ward-fill',
+      type: 'fill',
+      source: ADMIN,
+      'source-layer': 'wards',
+      filter: sel.wardId ? ['==', ['get', 'id'], sel.wardId] : NONE,
       paint: { 'fill-color': zc[sel.zoneId] ?? zc.NW, 'fill-opacity': 0.55 },
     },
     {
@@ -137,11 +157,23 @@ export function buildStyle({ theme, sel, zones, lgaLabels }) {
       type: 'line',
       source: ADMIN,
       'source-layer': 'lgas',
-      filter: lvl === 'state' || lvl === 'lga' ? ['==', ['get', 'state'], sel.stateId ?? ''] : NONE,
+      filter: lvl === 'state' || inLga ? ['==', ['get', 'state'], sel.stateId ?? ''] : NONE,
       paint: {
         'line-color': c.lgaLine,
         'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.6, 9, 1.2, 12, 2],
         'line-opacity': 0.8,
+      },
+    },
+    {
+      id: 'wards-line',
+      type: 'line',
+      source: ADMIN,
+      'source-layer': 'wards',
+      filter: inLga ? ['==', ['get', 'lga'], sel.lgaId ?? ''] : NONE,
+      paint: {
+        'line-color': c.wardLine,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 7, 0.5, 12, 1.4],
+        'line-dasharray': [3, 2],
       },
     },
     {
@@ -182,69 +214,30 @@ export function buildStyle({ theme, sel, zones, lgaLabels }) {
       paint: { 'line-color': c.hover, 'line-width': 2, 'line-opacity': ['case', hovered, 1, 0] },
     },
 
-    // One dot per member, placed in its LGA (or its state when the LGA wasn't recognised)
+    // Each area's member count under its name: states, then LGAs inside a state, then wards inside an LGA
     {
-      id: 'registration-dots',
-      type: 'circle',
-      source: 'registrations',
-      // Existing members (the demo baseline) underneath, live form registrations on top
-      filter: ['!', ['get', 'live']],
-      paint: {
-        'circle-color': c.memberDot,
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 0.6, 7, 1.2, 10, 2.5],
-        'circle-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.35, 8, 0.6],
-      },
-    },
-    {
-      id: 'registration-dots-live',
-      type: 'circle',
-      source: 'registrations',
-      filter: ['get', 'live'],
-      paint: {
-        'circle-color': c.dot,
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 7, 3.5, 10, 5.5],
-        'circle-opacity': 0.9,
-        'circle-stroke-color': c.dotStroke,
-        'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 4, 0.4, 10, 1],
-        'circle-stroke-opacity': 0.8,
-      },
-    },
-
-    // State names come from the tiles; LGA names from admin.json so they show at any zoom
-    {
-      id: 'state-labels',
+      id: 'count-labels',
       type: 'symbol',
-      source: ADMIN,
-      'source-layer': 'labels',
-      filter:
-        lvl === 'region'
-          ? ['==', ['get', 'level'], 'state']
-          : lvl === 'zone'
-            ? ['all', ['==', ['get', 'level'], 'state'], inZone]
-            : NONE,
+      source: 'counts',
+      filter: countFilter,
       layout: {
-        'text-field': ['upcase', ['get', 'name']],
-        'text-font': [FONTS.semibold],
-        'text-size': 12,
-        'text-letter-spacing': 0.1,
+        'text-field': [
+          'format',
+          lvl === 'region' || lvl === 'zone' ? ['upcase', ['get', 'name']] : ['get', 'name'],
+          { 'font-scale': 0.85 },
+          '\n',
+          {},
+          ['get', 'count'],
+          { 'font-scale': 1.2, 'text-font': ['literal', [FONTS.semibold]], 'text-color': c.count },
+        ],
+        'text-font': [FONTS.medium],
+        'text-size': lvl === 'region' || lvl === 'zone' ? 13 : 12,
+        'text-letter-spacing': lvl === 'region' || lvl === 'zone' ? 0.05 : 0,
         'text-max-width': 8,
-        'text-padding': 4,
+        'text-padding': 2,
+        'text-line-height': 1.15,
       },
       paint: { 'text-color': c.label, 'text-halo-color': c.labelHalo, 'text-halo-width': 1.6, 'text-halo-blur': 0.5 },
-    },
-    {
-      id: 'lga-labels',
-      type: 'symbol',
-      source: 'lga-labels',
-      filter: lvl === 'state' || lvl === 'lga' ? ['==', ['get', 'state'], sel.stateId ?? ''] : NONE,
-      layout: {
-        'text-field': ['get', 'name'],
-        'text-font': [FONTS.medium],
-        'text-size': 11,
-        'text-max-width': 8,
-        'text-padding': 3,
-      },
-      paint: { 'text-color': c.label, 'text-halo-color': c.labelHalo, 'text-halo-width': 1.4, 'text-halo-blur': 0.5 },
     },
   ];
 
@@ -255,12 +248,11 @@ export function buildStyle({ theme, sel, zones, lgaLabels }) {
       [ADMIN]: {
         type: 'vector',
         url: `pmtiles://${tilesUrl()}`,
-        promoteId: { states: 'id', lgas: 'id' },
+        promoteId: { states: 'id', lgas: 'id', wards: 'id' },
         attribution: MAP_ATTRIBUTION,
       },
       mask: { type: 'geojson', data: `${window.location.origin}${MAP_ROOT}/northern-nigeria/region-mask.geojson` },
-      'lga-labels': { type: 'geojson', data: lgaLabels },
-      registrations: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+      counts: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
     },
     layers,
   };
@@ -270,13 +262,13 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * Applies the differences between two styles from buildStyle() layer by layer. Used instead of
- * setStyle(…, { diff: true }), which would compare (and reset) the 100k+ registration points on every change.
+ * setStyle(…, { diff: true }), which would reset the counts pushed into the counts source with setData.
  */
 export function updateStyle(map, prev, next) {
   next.layers.forEach((layer, i) => {
     const old = prev.layers.find((l) => l.id === layer.id);
     if (!old) return;
-    // A layer that switches source layer (states ↔ lgas) has to be re-added in its place
+    // A layer that switches source layer (states → lgas → wards) has to be re-added in its place
     if (old['source-layer'] !== layer['source-layer']) {
       map.removeLayer(layer.id);
       map.addLayer(layer, next.layers.slice(i + 1).find((l) => map.getLayer(l.id))?.id);

@@ -2,7 +2,12 @@
   position: fixed;
   inset: 0;
   z-index: 1;
-  background: var(--background-color);
+  /* The map's own background colour; the site's light-theme --background-color is an orange gradient */
+  background: #eef0f3;
+}
+
+:global([data-bs-theme='dark']) .wrap {
+  background: #121212;
 }
 
 .map {

@@ -10,11 +10,21 @@ The ultimate goal of A19 is to create one million digital citizens and civic lea
 
 A19: Rewriting the Arewa Story — Digitally, Politically, and Powerfully.
 
-## Registrations on the State Chapters map
+## Member counts on the State Chapters map
 
-`/state-chapters` shows one dot per registration, read from the Google Sheet the registration form writes to
-(`pages/api/registrations.js`). The API returns only each registration's state, LGA and day, never names or contact
-details, and caches the sheet for 30 seconds. The map checks for new registrations every 30 seconds and pulses new ones.
+`/state-chapters` shows each area's member count on the map: states at first, a state's LGAs once you zoom into it,
+then an LGA's wards. The counts come from two places (`components/map/members.js`):
+
+- **Existing members** (`MEMBER_BASELINE` in `pages/state-chapters.js`, currently 112,000). Their locations aren't
+  recorded, so they are spread over LGAs in proportion to population, then evenly over each LGA's wards. The page
+  labels this as a demo estimate.
+- **Registrations from the form**, read from its Google Sheet (`pages/api/registrations.js`). They fill the officials
+  structure in sheet order: `OFFICIALS.perState` per state (10), then `perLga` per LGA (1), then `perWard` per ward
+  (1), each round going across all states before the next. The sheet's own state/LGA answers are not used for
+  placement. A new registration takes the next slot and pulses there on the map.
+
+The API returns only each row's matched state/LGA and day, never names or contact details, and caches the sheet for 30
+seconds. The map checks for new registrations every 30 seconds.
 
 Setup:
 
@@ -23,11 +33,3 @@ Setup:
 3. Optional: `REGISTRATIONS_SHEET_RANGE` for the tab (default: "Form Responses", else the first tab), and
    `REGISTRATIONS_STATE_COLUMN` / `REGISTRATIONS_LGA_COLUMN` / `REGISTRATIONS_TIME_COLUMN` (column letters) if the
    header row doesn't contain "State of Residence", "LGA" and "Timestamp".
-
-Demo baseline: `MEMBER_BASELINE` in `pages/state-chapters.js` (currently 112,000 existing members) is added before
-the form's registrations. Those members have no recorded location, so their dots are spread over the LGAs in proportion
-to population and the page labels them as a demo estimate; set it to `0` to show only the form's registrations.
-
-Answers are matched to the map's state and LGA names with tolerance for typos and common spellings
-(`lib/matchPlace.js`). A registration with an unrecognised LGA is placed in its state; one outside the 19 northern
-states is counted but not drawn. Dots are placed near the middle of the LGA, not at anyone's address.

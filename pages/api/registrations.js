@@ -83,15 +83,13 @@ async function load() {
   rows.forEach((row, i) => {
     if (!row.some((v) => String(v).trim())) return;
     const place = matcher(row[col.state], col.lga >= 0 ? row[col.lga] : '');
-    if (!place) {
-      outside++;
-      return;
-    }
-    // [sheet row, state P-code, LGA P-code or null, day registered or null]
-    points.push([i + 2, place.state, place.lga, col.time >= 0 ? toDay(row[col.time]) : null]);
+    if (!place) outside++;
+    // [sheet row, state P-code, LGA P-code (null when not recognised), day registered or null];
+    // state is null for answers outside the 19 northern states
+    points.push([i + 2, place?.state ?? null, place?.lga ?? null, col.time >= 0 ? toDay(row[col.time]) : null]);
   });
 
-  return { updated: new Date().toISOString(), total: points.length + outside, outside, points };
+  return { updated: new Date().toISOString(), total: points.length, outside, points };
 }
 
 export default async function handler(req, res) {
