@@ -74,3 +74,6 @@ pages/api/striking-effort-439520-v9-cf3e883365bc.json
 
 # dataconnect generated files
 .dataconnect
+
+# Next.js build output
+.next/
