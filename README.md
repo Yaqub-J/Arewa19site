@@ -15,9 +15,9 @@ A19: Rewriting the Arewa Story — Digitally, Politically, and Powerfully.
 `/state-chapters` shows each area's member count on the map: states at first, a state's LGAs once you zoom into it,
 then an LGA's wards. The counts come from two places (`components/map/members.js`):
 
-- **Existing members** (`MEMBER_BASELINE` in `pages/state-chapters.js`, currently 112,000). Their locations aren't
-  recorded, so they are spread over LGAs in proportion to population, then evenly over each LGA's wards. The page
-  labels this as a demo estimate.
+- **Placeholder members** (`MEMBER_BASELINE` in `pages/state-chapters.js`, currently 155,991, so the total reads
+  156,645 with 654 registrations). This is a demo figure, not a membership count: it is spread over LGAs in
+  proportion to population, then evenly over each LGA's wards, and the page labels it as placeholder figures.
 - **Registrations from the form**, read from its Google Sheet (`pages/api/registrations.js`). They fill the officials
   structure in sheet order: `OFFICIALS.perState` per state (10), then `perLga` per LGA (1), then `perWard` per ward
   (1), each round going across all states before the next. The sheet's own state/LGA answers are not used for

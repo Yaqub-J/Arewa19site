@@ -7,8 +7,9 @@ const StateChaptersMap = dynamic(() => import('../components/map/StateChaptersMa
   loading: () => <div style={{ position: 'fixed', inset: 0 }} />,
 });
 
-// Existing Arewa19 members before the website registration form
-const MEMBER_BASELINE = 112000;
+// Placeholder member count for the internal study build (not a real membership figure): with the form's current
+// 654 registrations the map's total reads 156,645
+const MEMBER_BASELINE = 155991;
 
 const northernStates = [
   { name: 'Adamawa', capital: 'Yola', zone: 'North-East' },
@@ -41,7 +42,7 @@ export default function StateChapters() {
         <meta name="description" content="A19 operates across all 19 Northern states through community cells connecting local action to digital innovation" />
       </Head>
 
-      {/* Demo for the movement: its existing membership, with the form's registrations added live on top */}
+      {/* Demo: a placeholder member count, with the form's registrations added live on top */}
       <StateChaptersMap chapters={northernStates} memberBaseline={MEMBER_BASELINE} />
     </>
   );

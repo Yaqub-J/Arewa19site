@@ -307,7 +307,8 @@ export default function StateChaptersMap({ chapters, memberBaseline = 0 }) {
         )}
         {memberBaseline > 0 && (
           <p className={styles.demoNote}>
-            <span>Demo</span> {fmt(memberBaseline)} existing members estimated by population. Form registrations fill
+            <span>Demo</span> Placeholder figures: {fmt(memberBaseline)} sample members spread by population. Form
+            registrations fill
             the officials structure: {OFFICIALS.perState} per state, then {OFFICIALS.perLga} per LGA, then{' '}
             {OFFICIALS.perWard} per ward.
           </p>
